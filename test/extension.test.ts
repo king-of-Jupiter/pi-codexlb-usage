@@ -6,6 +6,8 @@ import { join } from "node:path";
 import ext from "../src/extension.ts";
 
 const URL = "https://lb.example.com/api/usage";
+// Never-created path: keeps tests hermetic when a real ~/.config file exists.
+const NOCFG = join(tmpdir(), "codexlb-definitely-missing-config.json");
 
 /** Fake host: records handlers, widget calls, notifications. */
 function fakeHost() {
@@ -63,7 +65,7 @@ const payload = {
 };
 
 test("session_start polls codexlb with Bearer token and renders below the editor", async () => {
-	await withEnv({ CODEXLB_URL: URL, CODEXLB_TOKEN: "tok-123" }, async () => {
+	await withEnv({ CODEXLB_URL: URL, CODEXLB_TOKEN: "tok-123", CODEXLB_CONFIG: NOCFG }, async () => {
 		const f = mockFetch(payload);
 		try {
 			const h = fakeHost();
@@ -81,7 +83,7 @@ test("session_start polls codexlb with Bearer token and renders below the editor
 });
 
 test("headers on a reply fill in even without codexlb config", async () => {
-	await withEnv({ CODEXLB_URL: undefined, CODEXLB_USAGE_URL: undefined, CODEXLB_TOKEN: undefined, CODEXLB_BEARER_TOKEN: undefined }, async () => {
+	await withEnv({ CODEXLB_URL: undefined, CODEXLB_USAGE_URL: undefined, CODEXLB_TOKEN: undefined, CODEXLB_BEARER_TOKEN: undefined, CODEXLB_CONFIG: NOCFG }, async () => {
 		const h = fakeHost();
 		await h.fire("session_start", { reason: "startup" });
 		await h.fire("after_provider_response", {
@@ -101,7 +103,7 @@ test("headers on a reply fill in even without codexlb config", async () => {
 });
 
 test("/limits toggle hides and shows; default prints plain text with source", async () => {
-	await withEnv({ CODEXLB_URL: URL, CODEXLB_TOKEN: "t" }, async () => {
+	await withEnv({ CODEXLB_URL: URL, CODEXLB_TOKEN: "t", CODEXLB_CONFIG: NOCFG }, async () => {
 		const f = mockFetch(payload);
 		try {
 			const h = fakeHost();
@@ -119,7 +121,7 @@ test("/limits toggle hides and shows; default prints plain text with source", as
 });
 
 test("/limits status shows the endpoint host but never the token", async () => {
-	await withEnv({ CODEXLB_URL: URL, CODEXLB_TOKEN: "super-secret", CODEXLB_LABEL: "MyLB" }, async () => {
+	await withEnv({ CODEXLB_URL: URL, CODEXLB_TOKEN: "super-secret", CODEXLB_LABEL: "MyLB", CODEXLB_CONFIG: NOCFG }, async () => {
 		const f = mockFetch(payload);
 		try {
 			const h = fakeHost();
@@ -135,7 +137,7 @@ test("/limits status shows the endpoint host but never the token", async () => {
 });
 
 test("/limits without config warns with a setup hint", async () => {
-	await withEnv({ CODEXLB_URL: undefined, CODEXLB_USAGE_URL: undefined, CODEXLB_TOKEN: undefined, CODEXLB_BEARER_TOKEN: undefined }, async () => {
+	await withEnv({ CODEXLB_URL: undefined, CODEXLB_USAGE_URL: undefined, CODEXLB_TOKEN: undefined, CODEXLB_BEARER_TOKEN: undefined, CODEXLB_CONFIG: NOCFG }, async () => {
 		const h = fakeHost();
 		await h.fire("session_start", {});
 		await h.commands.limits("", h.ctx);
@@ -146,7 +148,7 @@ test("/limits without config warns with a setup hint", async () => {
 });
 
 test("/limits palette rejects unknown names", async () => {
-	await withEnv({ CODEXLB_URL: URL, CODEXLB_TOKEN: "t" }, async () => {
+	await withEnv({ CODEXLB_URL: URL, CODEXLB_TOKEN: "t", CODEXLB_CONFIG: NOCFG }, async () => {
 		const f = mockFetch(payload);
 		try {
 			const h = fakeHost();

@@ -148,7 +148,7 @@ export default function codexlbUsage(pi: HostAPI): void {
 				await poll();
 				const subs = store.all();
 				return c.ui.notify(
-					subs.length ? `codexLB: endpoint saved (${endpointHost(url)}), ${subs.length} subscription(s) polled` : `codexLB: endpoint saved (${endpointHost(url)}) but poll failed: ${lastError}`,
+					subs.length ? `CodexLB: endpoint saved (${endpointHost(url)}), ${subs.length} subscription(s) polled` : `CodexLB: endpoint saved (${endpointHost(url)}) but poll failed: ${lastError}`,
 					subs.length ? "info" : "warning",
 				);
 			}
@@ -159,7 +159,7 @@ export default function codexlbUsage(pi: HostAPI): void {
 				await poll();
 				const subs = store.all();
 				return c.ui.notify(
-					subs.length ? `codexLB: token saved, ${subs.length} subscription(s) polled` : `codexLB: token saved but poll failed: ${lastError}`,
+					subs.length ? `CodexLB: token saved, ${subs.length} subscription(s) polled` : `CodexLB: token saved but poll failed: ${lastError}`,
 					subs.length ? "info" : "warning",
 				);
 			}

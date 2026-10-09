@@ -21,12 +21,6 @@ export interface CodexLbLimit {
 	reset_at?: string | null;
 }
 
-export interface CodexLbConfig {
-	url: string;
-	token: string;
-	label: string;
-}
-
 const WINDOW_SECONDS: Record<string, number> = {
 	s: 1,
 	m: 60,
@@ -221,13 +215,6 @@ export async function fetchCodexLbUsage(
 }
 
 // ---- env config ----
-
-export function readCodexLbConfig(env: Record<string, string | undefined> = process.env): CodexLbConfig {
-	const url = (env.CODEXLB_URL ?? env.CODEXLB_USAGE_URL ?? "").trim();
-	const token = (env.CODEXLB_TOKEN ?? env.CODEXLB_BEARER_TOKEN ?? "").trim();
-	const label = (env.CODEXLB_LABEL ?? "").trim() || "CodexLB";
-	return { url, token, label };
-}
 
 export function pollIntervalMs(env: Record<string, string | undefined> = process.env, dflt = 5 * 60_000): number {
 	const n = Number(env.CODEXLB_POLL_MS);

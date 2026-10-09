@@ -9,10 +9,10 @@ import {
 	parseCodexLbResponse,
 	parseWindowSeconds,
 	pollIntervalMs,
-	readCodexLbConfig,
 	subscriptionFromLimits,
 	usedFraction,
 } from "../src/sources/codexlb.ts";
+import { resolveConfig } from "../src/config.ts";
 import { renderLine } from "../src/render.ts";
 
 const now = 1_700_000_000;
@@ -153,9 +153,10 @@ test("fetch: missing config and non-http(s) urls fail fast without network", asy
 	assert.equal(called, false);
 });
 
-test("env config: aliases, label default, poll clamp, host never leaks credentials", () => {
-	assert.deepEqual(readCodexLbConfig({ CODEXLB_URL: "https://a/b", CODEXLB_TOKEN: "t" }), { url: "https://a/b", token: "t", label: "CodexLB" });
-	assert.deepEqual(readCodexLbConfig({ CODEXLB_USAGE_URL: "https://a/b", CODEXLB_BEARER_TOKEN: "t", CODEXLB_LABEL: "My LB" }), { url: "https://a/b", token: "t", label: "My LB" });
+test("env config: aliases, poll clamp, host never leaks credentials", async () => {
+	const viaAlias = await resolveConfig({ CODEXLB_USAGE_URL: "https://a/b", CODEXLB_BEARER_TOKEN: "t", CODEXLB_LABEL: "My LB" });
+	assert.deepEqual([viaAlias.url, viaAlias.token, viaAlias.label], ["https://a/b", "t", "My LB"]);
+	assert.deepEqual([viaAlias.urlFrom, viaAlias.tokenFrom], ["env", "env"]);
 	assert.equal(pollIntervalMs({}, 300_000), 300_000);
 	assert.equal(pollIntervalMs({ CODEXLB_POLL_MS: "60000" }), 60_000);
 	assert.equal(pollIntervalMs({ CODEXLB_POLL_MS: "1000" }), 60_000); // floor: usage endpoints are rate limited
