@@ -1,19 +1,21 @@
 # pi-codexlb-usage
 
-Расширение для [pi](https://github.com/badlogic/pi-mono) / [oh-my-pi](https://github.com/can1357/oh-my-pi):
-полоса usage-лимитов из [codex-lb](https://github.com/Soju06/codex-lb) — виджет под редактором,
-как в [usage-limit-tracker](https://github.com/mattstrayer/usage-limit-tracker),
-но данные берутся с вашего балансировщика, как в
+*[Русская версия](README.ru.md)*
+
+An extension for [pi](https://github.com/badlogic/pi-mono) / [oh-my-pi](https://github.com/can1357/oh-my-pi):
+usage-limit bars from a [codex-lb](https://github.com/Soju06/codex-lb) load balancer —
+a widget below the editor, like [usage-limit-tracker](https://github.com/mattstrayer/usage-limit-tracker),
+but fed by your own balancer, like
 [paseocodexlbusage](https://github.com/king-of-Jupiter/paseocodexlbusage).
 
-Одна строка — один балансировщик: окна `5h` / `7d` из `limits[]` usage-эндпоинта.
-Цвет — **риск**, а не сырой процент (та же risk-модель, что в оригинале):
+One line per balancer: the `5h` / `7d` windows from the usage endpoint's `limits[]`.
+Color is **risk**, not raw percent (the same risk model as the original):
 
-- `│` — сколько окна уже прошло. Заливка левее тика = идёте в темпе.
-- `●` спокойно / в темпе, `▲` предупреждение / горячо.
-- Палитра по умолчанию приглушённая (`sage → amber → dusty red`), есть `vivid` и `pastel`.
+- `│` marks how much of the window has elapsed. Fill left of the tick = under pace.
+- `●` chill / on track, `▲` warning / hot.
+- Palette is muted by default (`sage → amber → dusty red`). `vivid` and `pastel` are available.
 
-## Установка
+## Install
 
 **oh-my-pi**
 
@@ -21,10 +23,10 @@
 omp install git:github.com/king-of-Jupiter/pi-codexlb-usage
 ```
 
-(В npm-реестре пакета нет — ставится напрямую с GitHub. Поэтому же не сработает
-`omp install npm:pi-codexlb-usage`.)
+(The package is not in the npm registry — it installs straight from GitHub, so
+`omp install npm:pi-codexlb-usage` will not work.)
 
-Без `bun` в PATH: склонируйте репозиторий и выполните
+Without `bun` on your PATH: clone the repo and run
 `omp plugin link ./pi-codexlb-usage`.
 
 **pi**
@@ -33,108 +35,110 @@ omp install git:github.com/king-of-Jupiter/pi-codexlb-usage
 pi install git:github.com/king-of-Jupiter/pi-codexlb-usage
 ```
 
-Или скопируйте `index.ts` + `src/` + `hooks/` в
-`~/.pi/agent/extensions/pi-codexlb-usage/` (pi) или
+Or copy `index.ts` + `src/` + `hooks/` into
+`~/.pi/agent/extensions/pi-codexlb-usage/` (pi) or
 `~/.omp/agent/extensions/pi-codexlb-usage/` (omp).
 
-Зависимостей нет. Нужен Node 22+ (хост выполняет TypeScript напрямую).
+No runtime dependencies. Node 22+ (the host runs TypeScript directly).
 
-Не ставьте одновременно с оригинальным `usage-limit-tracker`: оба регистрируют
-команду `/limits` и виджет `usage-limits`.
+Do not install alongside the original `usage-limit-tracker`: both register the
+`/limits` command and the `usage-limits` widget.
 
-## Настройка
+## Configure
 
-Самый удобный способ — командами прямо в чате (сохраняется в
-`~/.config/pi-codexlb-usage/config.json` с правами `0600`, токен никуда не светится):
+The easiest way is via chat commands (stored in
+`~/.config/pi-codexlb-usage/config.json` with mode `0600`; the token is never echoed):
 
 ```
 /limits set-url https://example.com/api/usage
 /limits set-token <bearer-token>
-/limits config    # показать файл, источник каждого поля, токен маскирован
+/limits config    # show file, source of each field, masked token
 ```
 
-Переменные окружения тоже работают и побеждают файл попольно
-(удобно для разовых запусков и CI):
+Environment variables also work and win per-field over the file
+(handy for one-off runs and CI):
 
 ```sh
 export CODEXLB_URL="https://example.com/api/usage"
 export CODEXLB_TOKEN="<bearer-token>"
 ```
 
-| Переменная | Назначение | По умолчанию |
+| Variable | Purpose | Default |
 |---|---|---|
-| `CODEXLB_URL` (`CODEXLB_USAGE_URL`) | Usage-эндпоинт балансировщика | — (берётся из файла) |
-| `CODEXLB_TOKEN` (`CODEXLB_BEARER_TOKEN`) | Bearer-токен (`Authorization: Bearer …`) | — (берётся из файла) |
-| `CODEXLB_LABEL` | Подпись строки в виджете | `CodexLB` |
-| `CODEXLB_CONFIG` | Свой путь к config.json (для тестов/профилей) | `~/.config/…` (`$XDG_CONFIG_HOME` учитывается) |
-| `CODEXLB_POLL_MS` | Интервал опроса (минимум 60 000) | `300000` (5 мин) |
-| `USAGE_LIMITS_HIDDEN=1` | Старт со скрытым виджетом | видимый |
-| `USAGE_LIMITS_PALETTE=vivid` | Палитра: `muted` / `vivid` / `pastel` | `muted` |
-| `CODEXLB_DEBUG=1` | Отладочные логи в stderr (без токена) | выкл. |
+| `CODEXLB_URL` (`CODEXLB_USAGE_URL`) | Balancer usage endpoint | — (taken from file) |
+| `CODEXLB_TOKEN` (`CODEXLB_BEARER_TOKEN`) | Bearer token (`Authorization: Bearer …`) | — (taken from file) |
+| `CODEXLB_LABEL` | Widget line label | `CodexLB` |
+| `CODEXLB_CONFIG` | Custom config.json path (tests/profiles) | `~/.config/…` (`$XDG_CONFIG_HOME` respected) |
+| `CODEXLB_POLL_MS` | Poll interval (minimum 60,000) | `300000` (5 min) |
+| `USAGE_LIMITS_HIDDEN=1` | Start with the widget hidden | visible |
+| `USAGE_LIMITS_PALETTE=vivid` | Palette: `muted` / `vivid` / `pastel` | `muted` |
+| `CODEXLB_DEBUG=1` | Debug logs to stderr (never the token) | off |
 
-Без настроек при старте сессии один раз показывается подсказка
-с нужными командами. Штатного хранилища настроек у расширений pi/omp нет,
-поэтому плагин ведёт собственный файл — root-лишнего не требует,
-секреты в истории шелла не остаются (в отличие от `export`).
+With nothing configured, a one-time setup hint is shown at session start.
+pi/omp extensions get no settings storage from the host, so the plugin keeps
+its own file — no root needed, and secrets stay out of shell history
+(unlike `export`).
 
-## Откуда цифры
+## Where the numbers come from
 
-Плагин опрашивает ваш codex-lb и разбирает `limits[]`
-(при пустом — `upstream_limits[]`):
+The plugin polls your codex-lb and parses `limits[]`
+(`upstream_limits[]` as fallback when empty):
 
-| `limit_window` | Окно виджета |
+| `limit_window` | Widget window |
 |---|---|
-| `5h` | `5h` (18000 с) |
-| `7d` | `7d` (604800 с) |
-| остальное (`90m`, `credits`, …) | как есть |
+| `5h` | `5h` (18000 s) |
+| `7d` | `7d` (604800 s) |
+| anything else (`90m`, `credits`, …) | verbatim |
 
-- `used = current_value / max_value`, запасной вариант — `max_value - remaining_value`.
-- Сброс — из `reset_at`. Без времени сброса — обычный пороговый бар без обратного отсчёта.
-- `model_filter` даёт суффикс: `5h·opus`, `7d·codex-mini`.
-- Как и во встроенных источниках, бар показывает **потраченную** долю
-  (`current_value`), а дашборд codex-lb — **оставшуюся**; в сумме 100%.
+- `used = current_value / max_value`, fallback `max_value - remaining_value`.
+- Reset time comes from `reset_at`. Entries without one render as plain
+  threshold gauges with no countdown.
+- `model_filter` adds a suffix: `5h·opus`, `7d·codex-mini`.
+- Like the built-in sources, bars show the **consumed** share
+  (`current_value`) while the codex-lb dashboard shows the **remaining** share —
+  the two add up to 100%.
 
-Дополнительно подхватываются бесплатные rate-limit заголовки каждого ответа
-(`anthropic-ratelimit-unified-*`, `x-codex-*` — codex-lb прокси может их
-пробрасывать). Опрос — на старте и каждые 5 минут, перерисовка — каждую минуту,
-чтобы двигался обратный отсчёт.
+Free rate-limit headers from every reply are picked up as a fill-in
+(`anthropic-ratelimit-unified-*`, `x-codex-*` — a codex-lb proxy may forward
+them). Polling runs at start and every 5 minutes; the display re-renders every
+minute so countdowns move.
 
-## Команды
+## Commands
 
-Команда — `/limits` (как в оригинале; встроенного конфликта с `/usage` нет).
+The command is `/limits` (as in the original; no clash with built-in `/usage`).
 
-| Команда | Эффект |
+| Command | Effect |
 |---|---|
-| `/limits` | Опросить сейчас и показать текстовую разбивку с источником |
-| `/limits status` | Эндпоинт (только хост), лейбл, давность опроса, ошибка — без секретов |
-| `/limits config` | Файл настроек, откуда взято каждое поле, маскированный токен |
-| `/limits set-url <url>` | Сохранить эндпоинт в файл и опросить |
-| `/limits set-token <token>` | Сохранить токен в файл (0600) и опросить |
-| `/limits toggle` | Скрыть / показать виджет |
-| `/limits palette muted\|vivid\|pastel` | Сменить цвета |
+| `/limits` | Poll now and print a plain-text breakdown with the data source |
+| `/limits status` | Endpoint (host only), label, poll age, error — no secrets |
+| `/limits config` | Config file, source of each field, masked token |
+| `/limits set-url <url>` | Save the endpoint to the file and poll |
+| `/limits set-token <token>` | Save the token to the file (0600) and poll |
+| `/limits toggle` | Hide / show the widget |
+| `/limits palette muted\|vivid\|pastel` | Switch colors |
 
-## Разработка
+## Development
 
 ```sh
 npm test        # node --test, zero deps
-npm run demo    # примеры строк
+npm run demo    # sample lines
 ```
 
-Структура:
+Layout:
 
-- `src/smart-color.ts` — risk-модель, палитры (чистая, из оригинала без изменений)
-- `src/render.ts` — бары/строки (чистая, без изменений)
-- `src/sources/codexlb.ts` — fetch + маппинг `limits[]` (порт `server/usage.ts` из paseocodexlbusage на zero-deps)
-- `src/config.ts` — конфиг-файл `~/.config/pi-codexlb-usage/config.json` (0600), env побеждает по́льно
-- `src/sources/headers.ts` — парсеры заголовков (без изменений)
-- `src/store.ts` — слияние окон по провайдеру (без изменений)
-- `src/extension.ts` — wiring хоста (события, виджет, таймеры, `/limits`)
+- `src/smart-color.ts` — risk model, palettes (pure, unchanged from the original)
+- `src/render.ts` — bar/line rendering (pure, unchanged)
+- `src/sources/codexlb.ts` — fetch + `limits[]` mapping (zero-dep port of `server/usage.ts` from paseocodexlbusage)
+- `src/config.ts` — config file `~/.config/pi-codexlb-usage/config.json` (0600), env wins per-field
+- `src/sources/headers.ts` — header parsers (unchanged)
+- `src/store.ts` — per-provider window merge (unchanged)
+- `src/extension.ts` — host wiring (events, widget, timers, `/limits`)
 
-## Благодарности
+## Credits
 
-- Виджет, risk-раскраска, рендер: [mattstrayer/usage-limit-tracker](https://github.com/mattstrayer/usage-limit-tracker) (MIT).
-  Идея risk-цвета — из [TokenEater](https://github.com/AThevon/TokenEater).
-- Маппинг codex-lb `limits[]`: [king-of-Jupiter/paseocodexlbusage](https://github.com/king-of-Jupiter/paseocodexlbusage).
-- Данные: [Soju06/codex-lb](https://github.com/Soju06/codex-lb).
+- Widget, risk coloring, rendering: [mattstrayer/usage-limit-tracker](https://github.com/mattstrayer/usage-limit-tracker) (MIT).
+  The risk-color idea is from [TokenEater](https://github.com/AThevon/TokenEater).
+- codex-lb `limits[]` mapping: [king-of-Jupiter/paseocodexlbusage](https://github.com/king-of-Jupiter/paseocodexlbusage).
+- Data: [Soju06/codex-lb](https://github.com/Soju06/codex-lb).
 
 MIT

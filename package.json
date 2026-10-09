@@ -39,6 +39,7 @@
     "src",
     "hooks",
     "README.md",
+    "README.ru.md",
     "LICENSE"
   ],
   "engines": {
