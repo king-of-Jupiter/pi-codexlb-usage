@@ -1,7 +1,8 @@
 {
   "name": "codexlb-usage",
   "owner": {
-    "name": "pi-codexlb-usage contributors"
+    "name": "king-of-Jupiter",
+    "url": "https://github.com/king-of-Jupiter"
   },
   "metadata": {
     "description": "Usage limit bars from a codex-lb load balancer (5h/7d) with risk-aware smart color and pacing"

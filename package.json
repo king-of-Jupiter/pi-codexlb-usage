@@ -32,7 +32,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/king-of-Jupiter/paseocodexlbusage"
+    "url": "https://github.com/king-of-Jupiter/pi-codexlb-usage"
   },
   "files": [
     "index.ts",
