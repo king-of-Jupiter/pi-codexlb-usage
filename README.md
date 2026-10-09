@@ -18,16 +18,19 @@
 **oh-my-pi**
 
 ```sh
-omp install npm:pi-codexlb-usage
+omp install git:github.com/king-of-Jupiter/pi-codexlb-usage
 ```
 
-Для npm-источников нужен `bun` в PATH. Без него: склонируйте репозиторий и выполните
+(В npm-реестре пакета нет — ставится напрямую с GitHub. Поэтому же не сработает
+`omp install npm:pi-codexlb-usage`.)
+
+Без `bun` в PATH: склонируйте репозиторий и выполните
 `omp plugin link ./pi-codexlb-usage`.
 
 **pi**
 
 ```sh
-pi install npm:pi-codexlb-usage
+pi install git:github.com/king-of-Jupiter/pi-codexlb-usage
 ```
 
 Или скопируйте `index.ts` + `src/` + `hooks/` в
