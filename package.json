@@ -1,0 +1,50 @@
+{
+  "name": "pi-codexlb-usage",
+  "version": "0.1.0",
+  "description": "Pi / oh-my-pi extension: usage limit bars from a codex-lb load balancer (5h/7d) with risk-aware smart color and pacing",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "pi",
+    "pi-coding-agent",
+    "oh-my-pi",
+    "extension",
+    "usage",
+    "rate-limit",
+    "codex-lb",
+    "codex",
+    "load-balancer",
+    "pi-package"
+  ],
+  "scripts": {
+    "test": "node --test 'test/**/*.test.ts'",
+    "demo": "node --experimental-strip-types scripts/demo.ts"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "omp": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/king-of-Jupiter/paseocodexlbusage"
+  },
+  "files": [
+    "index.ts",
+    "src",
+    "hooks",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
