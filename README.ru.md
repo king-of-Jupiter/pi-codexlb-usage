@@ -56,7 +56,8 @@ pi install git:github.com/king-of-Jupiter/pi-codexlb-usage
 ```
 
 Голый хост тоже можно — `/limits set-url codexlb.example.com`
-сохранит `https://codexlb.example.com/v1/usage`. Полные URL с собственным
+сохранит `https://codexlb.example.com/v1/usage`, а неполный путь
+дополнится (`…/v1` → `…/v1/usage`). Полные URL с собственным
 путём используются как есть. Токеном должен быть **API-ключ** codex-lb
 (дашборд → API keys), а не пароль от дашборда.
 

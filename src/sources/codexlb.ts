@@ -165,7 +165,8 @@ export interface CodexLbFetchResult {
  * Normalize user input into a full endpoint URL:
  * - `codexlb.example.com` → `https://codexlb.example.com/v1/usage`
  * - `https://host` / `http://host:1234/` → scheme kept, `/v1/usage` appended
- * - full URLs with a path (`…/v1/usage`, custom prefixes) are kept as-is
+ * - partial paths gain `/usage`: `…/v1` → `…/v1/usage`
+ * - full usage URLs (`…/v1/usage`, custom prefixes) are kept as-is
  *   (trailing slashes stripped). Unparseable input comes back trimmed.
  */
 export function normalizeEndpointUrl(input: string): string {
@@ -175,7 +176,9 @@ export function normalizeEndpointUrl(input: string): string {
 	try {
 		const u = new URL(s);
 		const path = u.pathname.replace(/\/+$/, "");
-		u.pathname = path === "" ? "/v1/usage" : path;
+		if (path === "") u.pathname = "/v1/usage";
+		else if (path.endsWith("/usage")) u.pathname = path;
+		else u.pathname = `${path}/usage`;
 		return u.toString();
 	} catch {
 		return input.trim();

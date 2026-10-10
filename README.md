@@ -56,7 +56,8 @@ The easiest way is via chat commands (stored in
 ```
 
 A bare host works too — `/limits set-url codexlb.example.com`
-saves `https://codexlb.example.com/v1/usage`. Full URLs with a custom
+saves `https://codexlb.example.com/v1/usage`, and a partial path gains
+`/usage` (`…/v1` → `…/v1/usage`). Full URLs with a custom
 path are kept as-is. The token must be a codex-lb **API key**
 (dashboard → API keys), not the dashboard password.
 

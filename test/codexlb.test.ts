@@ -127,6 +127,8 @@ test("normalizeEndpointUrl: bare hosts gain https:// + /v1/usage, full URLs kept
 	assert.equal(normalizeEndpointUrl("http://127.0.0.1:2455/"), "http://127.0.0.1:2455/v1/usage");
 	assert.equal(normalizeEndpointUrl("https://h/x/v1/usage"), "https://h/x/v1/usage");
 	assert.equal(normalizeEndpointUrl("https://h/v1/usage/"), "https://h/v1/usage");
+	assert.equal(normalizeEndpointUrl("https://codexlb.viperrr.ru/v1"), "https://codexlb.viperrr.ru/v1/usage");
+	assert.equal(normalizeEndpointUrl("https://h/api"), "https://h/api/usage");
 	assert.equal(normalizeEndpointUrl(""), "");
 	assert.equal(isConfigurableUrl(normalizeEndpointUrl("codexlb.viperrr.ru")), true);
 	assert.equal(isConfigurableUrl(normalizeEndpointUrl("http://localhost:2455")), true);
