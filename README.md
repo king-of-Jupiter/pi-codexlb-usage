@@ -111,6 +111,7 @@ and answers — there are no other data sources.
 ## Commands
 
 The command is `/limits` (as in the original; no clash with built-in `/usage`).
+Subcommands and palette names complete via Tab.
 
 | Command | Effect |
 |---|---|

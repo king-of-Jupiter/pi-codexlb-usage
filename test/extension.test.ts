@@ -13,6 +13,7 @@ const NOCFG = join(tmpdir(), "codexlb-definitely-missing-config.json");
 function fakeHost() {
 	const handlers: Record<string, Function[]> = {};
 	const commands: Record<string, Function> = {};
+	const completions: Record<string, (prefix: string) => any> = {};
 	const widgets: any[] = [];
 	const notes: { msg: string; level?: string }[] = [];
 	const ctx: any = {
@@ -25,11 +26,11 @@ function fakeHost() {
 	};
 	const api = {
 		on: (e: string, h: Function) => (handlers[e] ??= []).push(h),
-		registerCommand: (n: string, d: any) => (commands[n] = d.handler),
+		registerCommand: (n: string, d: any) => { commands[n] = d.handler; if (d.getArgumentCompletions) completions[n] = d.getArgumentCompletions; },
 	};
 	ext(api as any);
 	const fire = async (e: string, ev: any) => { for (const h of handlers[e] ?? []) await h(ev, ctx); };
-	return { fire, commands, widgets, notes, ctx };
+	return { fire, commands, completions, widgets, notes, ctx };
 }
 
 function withEnv(env: Record<string, string | undefined>, fn: () => Promise<void>) {
@@ -189,4 +190,16 @@ test("/limits set-url accepts a bare host and stores the full /v1/usage URL", as
 			await h.fire("session_shutdown", {});
 		} finally { f.restore(); }
 	});
+});
+
+test("/limits registers argument completions: subcommands, then palette names", async () => {
+	const h = fakeHost();
+	const values = (items: any[] | null) => (items ?? []).map((i) => i.value);
+	assert.deepEqual(values(h.completions.limits("")), ["toggle", "palette", "status", "config", "set-url", "set-token"]);
+	assert.deepEqual(values(h.completions.limits("set")), ["set-url", "set-token"]);
+	assert.deepEqual(values(h.completions.limits("palette ")), ["muted", "vivid", "pastel"]);
+	assert.deepEqual(values(h.completions.limits("palette v")), ["vivid"]);
+	assert.equal(h.completions.limits("set-url "), null);
+	assert.deepEqual(values(h.completions.limits("bogus")), []);
+	await h.fire("session_shutdown", {});
 });

@@ -22,14 +22,41 @@ interface HostCtx {
 	setInterval?: (fn: () => void, ms: number) => unknown;
 	clearTimer?: (h: unknown) => void;
 }
+interface CompletionItem {
+	value: string;
+	label: string;
+	description?: string;
+}
 interface HostAPI {
 	on: (event: string, handler: (event: any, ctx: HostCtx) => unknown) => void;
-	registerCommand: (name: string, def: { description: string; handler: (args: string, ctx: HostCtx) => Promise<void> | void }) => void;
+	registerCommand: (name: string, def: { description: string; getArgumentCompletions?: (argumentPrefix: string) => CompletionItem[] | null; handler: (args: string, ctx: HostCtx) => Promise<void> | void }) => void;
 }
 
 const WIDGET = "usage-limits";
 const TICK_MS = 60_000; // re-render so reset countdowns move
 const PALETTES: Record<string, Palette> = { muted: MUTED, vivid: VIVID, pastel: PASTEL };
+const PALETTE_NAMES = ["muted", "vivid", "pastel"];
+const SUBCOMMANDS: CompletionItem[] = [
+	{ value: "toggle", label: "toggle", description: "Hide / show the widget" },
+	{ value: "palette", label: "palette", description: "Switch colors: muted, vivid, pastel" },
+	{ value: "status", label: "status", description: "Endpoint, poll age, error — no secrets" },
+	{ value: "config", label: "config", description: "Config file and field sources" },
+	{ value: "set-url", label: "set-url", description: "Save the balancer endpoint URL" },
+	{ value: "set-token", label: "set-token", description: "Save the bearer token" },
+];
+
+/** Tab-completion for `/limits` args: subcommands first, palette names after `palette `. */
+export function getLimitsCompletions(argumentPrefix: string): CompletionItem[] | null {
+	const [first = "", ...rest] = argumentPrefix.split(/\s+/);
+	if (rest.length > 0) {
+		if (first === "palette") {
+			const partial = rest.join(" ");
+			return PALETTE_NAMES.filter((n) => n.startsWith(partial)).map((n) => ({ value: n, label: n }));
+		}
+		return null; // free-text args (set-url, set-token): nothing to suggest
+	}
+	return SUBCOMMANDS.filter((s) => s.value.startsWith(first));
+}
 
 export default function codexlbUsage(pi: HostAPI): void {
 	const store = new SubscriptionStore();
@@ -114,6 +141,7 @@ export default function codexlbUsage(pi: HostAPI): void {
 
 	pi.registerCommand("limits", {
 		description: "CodexLB usage bars: /limits [refresh|toggle|palette muted|vivid|pastel|status|config|set-url <url>|set-token <token>]",
+		getArgumentCompletions: getLimitsCompletions,
 		handler: async (args, c) => {
 			ctx = c;
 			const [cmd, arg] = args.trim().split(/\s+/);
