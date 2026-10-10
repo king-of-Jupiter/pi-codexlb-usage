@@ -82,26 +82,6 @@ test("session_start polls codexlb with Bearer token and renders below the editor
 	});
 });
 
-test("headers on a reply fill in even without codexlb config", async () => {
-	await withEnv({ CODEXLB_URL: undefined, CODEXLB_USAGE_URL: undefined, CODEXLB_TOKEN: undefined, CODEXLB_BEARER_TOKEN: undefined, CODEXLB_CONFIG: NOCFG }, async () => {
-		const h = fakeHost();
-		await h.fire("session_start", { reason: "startup" });
-		await h.fire("after_provider_response", {
-			status: 200,
-			headers: {
-				"x-codex-primary-used-percent": "37",
-				"x-codex-primary-window-minutes": "300",
-				"x-codex-secondary-used-percent": "12",
-				"x-codex-secondary-window-minutes": "10080",
-			},
-		});
-		const last = h.widgets.at(-1)!;
-		assert.match(last[1][0], /ChatGPT/);
-		assert.match(last[1][0], /5h .*37%/);
-		await h.fire("session_shutdown", {});
-	});
-});
-
 test("/limits toggle hides and shows; default prints plain text with source", async () => {
 	await withEnv({ CODEXLB_URL: URL, CODEXLB_TOKEN: "t", CODEXLB_CONFIG: NOCFG }, async () => {
 		const f = mockFetch(payload);

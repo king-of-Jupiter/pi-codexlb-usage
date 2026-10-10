@@ -104,10 +104,9 @@ The plugin polls your codex-lb and parses `limits[]`
   (`current_value`) while the codex-lb dashboard shows the **remaining** share —
   the two add up to 100%.
 
-Free rate-limit headers from every reply are picked up as a fill-in
-(`anthropic-ratelimit-unified-*`, `x-codex-*` — a codex-lb proxy may forward
-them). Polling runs at start and every 5 minutes; the display re-renders every
-minute so countdowns move.
+Polling runs at start and every 5 minutes; the display re-renders every
+minute so countdowns move. Nothing is shown until the endpoint is configured
+and answers — there are no other data sources.
 
 ## Commands
 
@@ -136,7 +135,6 @@ Layout:
 - `src/render.ts` — bar/line rendering (pure, unchanged)
 - `src/sources/codexlb.ts` — fetch + `limits[]` mapping (zero-dep port of `server/usage.ts` from paseocodexlbusage)
 - `src/config.ts` — config file `~/.config/pi-codexlb-usage/config.json` (0600), env wins per-field
-- `src/sources/headers.ts` — header parsers (unchanged)
 - `src/store.ts` — per-provider window merge (unchanged)
 - `src/extension.ts` — host wiring (events, widget, timers, `/limits`)
 

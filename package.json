@@ -1,6 +1,6 @@
 {
   "name": "pi-codexlb-usage",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Pi / oh-my-pi extension: usage limit bars from a codex-lb load balancer (5h/7d) with risk-aware smart color and pacing",
   "type": "module",
   "license": "MIT",

@@ -3,14 +3,12 @@
  * Works on both hosts. Uses only structural types so it needs no host package at compile time.
  *
  * Data: polls the balancer's usage endpoint (`limits[]` with 5h/7d credit windows)
- * over HTTPS with a Bearer token (see `sources/codexlb.ts`), plus free
- * rate-limit headers from every reply as a fill-in (see `sources/headers.ts`).
+ * over HTTPS with a Bearer token (see `sources/codexlb.ts`).
  */
 import { renderLine } from "./render.ts";
 import { MUTED, PASTEL, VIVID, type Palette } from "./smart-color.ts";
 import { maskToken, resolveConfig, saveFileConfig } from "./config.ts";
 import { endpointHost, fetchCodexLbUsage, isConfigurableUrl, normalizeEndpointUrl, pollIntervalMs } from "./sources/codexlb.ts";
-import { parseHeaders } from "./sources/headers.ts";
 import { SubscriptionStore } from "./store.ts";
 
 // ---- minimal host surface (pi and omp both satisfy this) ----
@@ -113,15 +111,6 @@ export default function codexlbUsage(pi: HostAPI): void {
 		}
 	});
 	pi.on("session_shutdown", () => stopTimers());
-
-	// Free data on every reply: rate-limit headers (a codex-lb proxy may forward upstream ones).
-	pi.on("after_provider_response", (e, c) => {
-		ctx = c;
-		if (!e?.headers) return;
-		const parsed = parseHeaders(c.model?.provider, e.headers, now());
-		debug("headers from", c.model?.provider, "→", parsed ? parsed.windows.map((w) => `${w.label}=${Math.round(w.used * 100)}%`).join(",") : "none");
-		if (store.upsert(parsed)) render();
-	});
 
 	pi.registerCommand("limits", {
 		description: "CodexLB usage bars: /limits [refresh|toggle|palette muted|vivid|pastel|status|config|set-url <url>|set-token <token>]",
