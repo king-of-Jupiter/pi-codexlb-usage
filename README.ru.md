@@ -78,6 +78,7 @@ export CODEXLB_TOKEN="<bearer-token>"
 | `CODEXLB_POLL_MS` | Интервал опроса (минимум 60 000) | `300000` (5 мин) |
 | `USAGE_LIMITS_HIDDEN=1` | Старт со скрытым виджетом | видимый |
 | `USAGE_LIMITS_PALETTE=vivid` | Палитра: `muted` / `vivid` / `pastel` | `muted` |
+| `CODEXLB_MODE=remaining` | Показывать остаток вместо потраченного | `used` |
 | `CODEXLB_DEBUG=1` | Отладочные логи в stderr (без токена) | выкл. |
 
 Без настроек при старте сессии один раз показывается подсказка
@@ -120,6 +121,7 @@ export CODEXLB_TOKEN="<bearer-token>"
 | `/limits set-token <token>` | Сохранить токен в файл (0600) и опросить |
 | `/limits toggle` | Скрыть / показать виджет |
 | `/limits palette muted\|vivid\|pastel` | Сменить цвета |
+| `/limits mode used\|remaining` | Показывать потраченное или оставшееся (цвет остаётся риск-ориентированным) |
 
 ## Разработка
 

@@ -78,6 +78,7 @@ export CODEXLB_TOKEN="<bearer-token>"
 | `CODEXLB_POLL_MS` | Poll interval (minimum 60,000) | `300000` (5 min) |
 | `USAGE_LIMITS_HIDDEN=1` | Start with the widget hidden | visible |
 | `USAGE_LIMITS_PALETTE=vivid` | Palette: `muted` / `vivid` / `pastel` | `muted` |
+| `CODEXLB_MODE=remaining` | Show remaining share instead of consumed | `used` |
 | `CODEXLB_DEBUG=1` | Debug logs to stderr (never the token) | off |
 
 With nothing configured, a one-time setup hint is shown at session start.
@@ -122,6 +123,8 @@ Subcommands and palette names complete via Tab.
 | `/limits set-token <token>` | Save the token to the file (0600) and poll |
 | `/limits toggle` | Hide / show the widget |
 | `/limits palette muted\|vivid\|pastel` | Switch colors |
+| `/limits mode used\|remaining` | Show consumed or remaining share (color stays risk-based) |
+| `/limits mode used\|remaining` | Show consumed or remaining share (color stays risk-based) |
 
 ## Development
 

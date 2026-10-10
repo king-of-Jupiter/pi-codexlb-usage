@@ -5,7 +5,7 @@
  * Data: polls the balancer's usage endpoint (`limits[]` with 5h/7d credit windows)
  * over HTTPS with a Bearer token (see `sources/codexlb.ts`).
  */
-import { renderLine } from "./render.ts";
+import { renderLine, type BarMode } from "./render.ts";
 import { MUTED, PASTEL, VIVID, type Palette } from "./smart-color.ts";
 import { maskToken, resolveConfig, saveFileConfig } from "./config.ts";
 import { endpointHost, fetchCodexLbUsage, isConfigurableUrl, normalizeEndpointUrl, pollIntervalMs } from "./sources/codexlb.ts";
@@ -39,29 +39,38 @@ const PALETTE_NAMES = ["muted", "vivid", "pastel"];
 const SUBCOMMANDS: CompletionItem[] = [
 	{ value: "toggle", label: "toggle", description: "Hide / show the widget" },
 	{ value: "palette", label: "palette", description: "Switch colors: muted, vivid, pastel" },
+	{ value: "mode", label: "mode", description: "Show used or remaining share" },
 	{ value: "status", label: "status", description: "Endpoint, poll age, error — no secrets" },
 	{ value: "config", label: "config", description: "Config file and field sources" },
 	{ value: "set-url", label: "set-url", description: "Save the balancer endpoint URL" },
 	{ value: "set-token", label: "set-token", description: "Save the bearer token" },
 ];
 
-/** Tab-completion for `/limits` args: subcommands first, palette names after `palette `. */
+/** Tab-completion for `/limits` args: subcommands first, option values after `palette `/`mode `. */
 export function getLimitsCompletions(argumentPrefix: string): CompletionItem[] | null {
 	const [first = "", ...rest] = argumentPrefix.split(/\s+/);
 	if (rest.length > 0) {
+		const partial = rest.join(" ");
 		if (first === "palette") {
-			const partial = rest.join(" ");
 			return PALETTE_NAMES.filter((n) => n.startsWith(partial)).map((n) => ({ value: n, label: n }));
+		}
+		if (first === "mode") {
+			return (["used", "remaining"] as const).filter((n) => n.startsWith(partial)).map((n) => ({ value: n, label: n }));
 		}
 		return null; // free-text args (set-url, set-token): nothing to suggest
 	}
 	return SUBCOMMANDS.filter((s) => s.value.startsWith(first));
 }
 
+function normalizeMode(v: string | undefined): BarMode {
+	return v?.trim() === "remaining" ? "remaining" : "used";
+}
+
 export default function codexlbUsage(pi: HostAPI): void {
 	const store = new SubscriptionStore();
 	let visible = process.env.USAGE_LIMITS_HIDDEN !== "1";
 	let palette = PALETTES[process.env.USAGE_LIMITS_PALETTE ?? ""] ?? MUTED;
+	let mode = normalizeMode(process.env.CODEXLB_MODE ?? process.env.USAGE_LIMITS_MODE);
 	let ctx: HostCtx | undefined;
 	let timers: unknown[] = [];
 	let lastError = "";
@@ -74,7 +83,7 @@ export default function codexlbUsage(pi: HostAPI): void {
 		if (!ctx || ctx.hasUI === false) return;
 		if (!visible || store.size === 0) return ctx.ui.setWidget(WIDGET, undefined);
 		const t = now();
-		const lines = store.all().map((s) => renderLine(s.name, s.windows, { now: t, palette }));
+		const lines = store.all().map((s) => renderLine(s.name, s.windows, { now: t, palette, mode }));
 		ctx.ui.setWidget(WIDGET, lines, { placement: "belowEditor" });
 	}
 
@@ -140,7 +149,7 @@ export default function codexlbUsage(pi: HostAPI): void {
 	pi.on("session_shutdown", () => stopTimers());
 
 	pi.registerCommand("limits", {
-		description: "CodexLB usage bars: /limits [refresh|toggle|palette muted|vivid|pastel|status|config|set-url <url>|set-token <token>]",
+		description: "CodexLB usage bars: /limits [refresh|toggle|palette muted|vivid|pastel|mode used|remaining|status|config|set-url <url>|set-token <token>]",
 		getArgumentCompletions: getLimitsCompletions,
 		handler: async (args, c) => {
 			ctx = c;
@@ -156,6 +165,13 @@ export default function codexlbUsage(pi: HostAPI): void {
 					return render();
 				}
 				return c.ui.notify("limits: unknown palette — use muted, vivid or pastel", "warning");
+			}
+			if (cmd === "mode") {
+				if (arg === "used" || arg === "remaining") {
+					mode = arg;
+					return render();
+				}
+				return c.ui.notify(`limits: unknown mode — use used or remaining (current: ${mode})`, "warning");
 			}
 			if (cmd === "set-url") {
 				const normalized = normalizeEndpointUrl(arg ?? "");
@@ -196,8 +212,9 @@ export default function codexlbUsage(pi: HostAPI): void {
 			if (cmd === "status") {
 				const cfg = await resolveConfig();
 				const subs = store.all();
+				const shown = (u: number) => Math.round(((mode === "remaining" ? 1 - u : u)) * 100);
 				const detail = subs.length
-					? subs.map((s) => `${s.name}[${s.source}]: ${s.windows.map((w) => `${w.label}=${Math.round(w.used * 100)}%`).join(", ")}`).join("; ")
+					? subs.map((s) => `${s.name}[${s.source}]: ${s.windows.map((w) => `${w.label}=${shown(w.used)}%`).join(", ")}`).join("; ")
 					: "no data yet";
 				return c.ui.notify(
 					`codexlb: ${cfg.url ? endpointHost(cfg.url) : "(no url)"} as ${cfg.label}${lastPollAt ? `, polled ${Math.max(0, now() - lastPollAt)}s ago` : ", never polled"}${lastError ? `, last error: ${lastError}` : ""}\n${detail}`,
@@ -208,7 +225,7 @@ export default function codexlbUsage(pi: HostAPI): void {
 			const subs = store.all();
 			if (!subs.length) return c.ui.notify(lastError ? `limits: no data (${lastError})` : "limits: no data yet — run /limits set-url and /limits set-token", "warning");
 			const t = now();
-			c.ui.notify(subs.map((s) => `${renderLine(s.name, s.windows, { now: t, color: false })}  [${s.source}]`).join("\n"), "info");
+			c.ui.notify(subs.map((s) => `${renderLine(s.name, s.windows, { now: t, color: false, mode })}  [${s.source}]`).join("\n"), "info");
 		},
 	});
 }

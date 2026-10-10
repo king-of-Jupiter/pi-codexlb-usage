@@ -195,11 +195,44 @@ test("/limits set-url accepts a bare host and stores the full /v1/usage URL", as
 test("/limits registers argument completions: subcommands, then palette names", async () => {
 	const h = fakeHost();
 	const values = (items: any[] | null) => (items ?? []).map((i) => i.value);
-	assert.deepEqual(values(h.completions.limits("")), ["toggle", "palette", "status", "config", "set-url", "set-token"]);
+	assert.deepEqual(values(h.completions.limits("")), ["toggle", "palette", "mode", "status", "config", "set-url", "set-token"]);
 	assert.deepEqual(values(h.completions.limits("set")), ["set-url", "set-token"]);
 	assert.deepEqual(values(h.completions.limits("palette ")), ["muted", "vivid", "pastel"]);
 	assert.deepEqual(values(h.completions.limits("palette v")), ["vivid"]);
+	assert.deepEqual(values(h.completions.limits("mode ")), ["used", "remaining"]);
+	assert.deepEqual(values(h.completions.limits("mode r")), ["remaining"]);
 	assert.equal(h.completions.limits("set-url "), null);
 	assert.deepEqual(values(h.completions.limits("bogus")), []);
 	await h.fire("session_shutdown", {});
+});
+
+test("/limits mode switches the widget between used and remaining", async () => {
+	await withEnv({ CODEXLB_URL: URL, CODEXLB_TOKEN: "t", CODEXLB_CONFIG: NOCFG, CODEXLB_MODE: undefined, USAGE_LIMITS_MODE: undefined }, async () => {
+		const f = mockFetch(payload);
+		try {
+			const h = fakeHost();
+			await h.fire("session_start", {});
+			assert.match(h.widgets.at(-1)![1][0], /5h .*42%/);
+			await h.commands.limits("mode remaining", h.ctx);
+			assert.match(h.widgets.at(-1)![1][0], /5h .*58%/);
+			await h.commands.limits("mode used", h.ctx);
+			assert.match(h.widgets.at(-1)![1][0], /5h .*42%/);
+			await h.commands.limits("mode bogus", h.ctx);
+			assert.equal(h.notes.at(-1)!.level, "warning");
+			assert.match(h.notes.at(-1)!.msg, /used or remaining/);
+			await h.fire("session_shutdown", {});
+		} finally { f.restore(); }
+	});
+});
+
+test("CODEXLB_MODE=remaining starts in remaining mode", async () => {
+	await withEnv({ CODEXLB_URL: URL, CODEXLB_TOKEN: "t", CODEXLB_CONFIG: NOCFG, CODEXLB_MODE: "remaining" }, async () => {
+		const f = mockFetch(payload);
+		try {
+			const h = fakeHost();
+			await h.fire("session_start", {});
+			assert.match(h.widgets.at(-1)![1][0], /5h .*58%/);
+			await h.fire("session_shutdown", {});
+		} finally { f.restore(); }
+	});
 });

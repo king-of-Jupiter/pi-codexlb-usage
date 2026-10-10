@@ -11,12 +11,16 @@ export interface Window {
 	windowSecs?: number;
 }
 
+export type BarMode = "used" | "remaining";
+
 export interface RenderOptions {
 	width?: number;
 	palette?: Palette;
 	profile?: Profile;
 	now?: number; // unix seconds
 	color?: boolean; // emit ANSI truecolor
+	/** Which share the bar and percent show. Risk color/glyph always derive from `used`. */
+	mode?: BarMode;
 }
 
 const ESC = "\x1b[";
@@ -43,7 +47,8 @@ export function renderWindow(w: Window, o: RenderOptions = {}): string {
 	const now = o.now ?? Math.floor(Date.now() / 1000);
 	const color = o.color ?? true;
 	const used = Math.max(0, Math.min(1, w.used));
-	const pct = Math.round(used * 100);
+	const shown = (o.mode ?? "used") === "remaining" ? 1 - used : used;
+	const pct = Math.round(shown * 100);
 
 	let r: number;
 	let tick = -1;

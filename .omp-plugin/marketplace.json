@@ -12,7 +12,7 @@
       "name": "codexlb-usage",
       "source": "./",
       "description": "Usage limit bars from a codex-lb load balancer (5h/7d) with risk-aware smart color and pacing. Adds the /limits command and a status widget.",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "author": { "name": "pi-codexlb-usage contributors" },
       "license": "MIT",
       "keywords": ["usage", "rate-limit", "codex-lb", "codex", "status"],

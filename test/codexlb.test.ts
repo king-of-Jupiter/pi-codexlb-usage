@@ -15,7 +15,7 @@ import {
 	usedFraction,
 } from "../src/sources/codexlb.ts";
 import { resolveConfig } from "../src/config.ts";
-import { renderLine } from "../src/render.ts";
+import { renderLine, renderWindow } from "../src/render.ts";
 
 const now = 1_700_000_000;
 
@@ -113,6 +113,17 @@ test("codexlb renders as a plain line for /limits output", () => {
 	assert.match(line, /CodexLB/);
 	assert.match(line, /5h .*42%/);
 	assert.doesNotMatch(line, /\x1b/);
+});
+
+test("render mode remaining flips bar and percent, risk color still derives from used", () => {
+	const w = [{ label: "5h", used: 0.42 }];
+	assert.equal(renderLine("CodexLB", w, { color: false, now }), "CodexLB  5h ████░░░░░░  42%");
+	assert.equal(renderLine("CodexLB", w, { color: false, now, mode: "remaining" }), "CodexLB  5h █████░░░░░  58%");
+	// Hot window stays hot in remaining mode (color is risk, not direction).
+	const hot = { label: "5h", used: 0.92, resetsAt: now + 5400, windowSecs: 18000 };
+	assert.match(renderWindow(hot, { now }), /38;2;207;107;107/);
+	assert.match(renderWindow(hot, { now, mode: "remaining" }), /38;2;207;107;107/);
+	assert.match(renderWindow(hot, { now, mode: "remaining", color: false }), /8%/);
 });
 
 // ---- fetch ----
