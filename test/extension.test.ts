@@ -197,10 +197,13 @@ test("/limits registers argument completions: subcommands, then palette names", 
 	const values = (items: any[] | null) => (items ?? []).map((i) => i.value);
 	assert.deepEqual(values(h.completions.limits("")), ["toggle", "palette", "mode", "status", "config", "set-url", "set-token"]);
 	assert.deepEqual(values(h.completions.limits("set")), ["set-url", "set-token"]);
-	assert.deepEqual(values(h.completions.limits("palette ")), ["muted", "vivid", "pastel"]);
-	assert.deepEqual(values(h.completions.limits("palette v")), ["vivid"]);
-	assert.deepEqual(values(h.completions.limits("mode ")), ["used", "remaining"]);
-	assert.deepEqual(values(h.completions.limits("mode r")), ["remaining"]);
+	assert.deepEqual(values(h.completions.limits("toggle")), []);
+	assert.deepEqual(values(h.completions.limits("palette ")), ["palette muted", "palette vivid", "palette pastel"]);
+	assert.deepEqual(h.completions.limits("palette ").map((i: any) => i.label), ["muted", "vivid", "pastel"]);
+	assert.deepEqual(values(h.completions.limits("palette v")), ["palette vivid"]);
+	assert.deepEqual(values(h.completions.limits("palette muted")), []);
+	assert.deepEqual(values(h.completions.limits("mode ")), ["mode used", "mode remaining"]);
+	assert.deepEqual(values(h.completions.limits("mode r")), ["mode remaining"]);
 	assert.equal(h.completions.limits("set-url "), null);
 	assert.deepEqual(values(h.completions.limits("bogus")), []);
 	await h.fire("session_shutdown", {});

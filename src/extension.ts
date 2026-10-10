@@ -36,6 +36,7 @@ const WIDGET = "usage-limits";
 const TICK_MS = 60_000; // re-render so reset countdowns move
 const PALETTES: Record<string, Palette> = { muted: MUTED, vivid: VIVID, pastel: PASTEL };
 const PALETTE_NAMES = ["muted", "vivid", "pastel"];
+const MODES = ["used", "remaining"];
 const SUBCOMMANDS: CompletionItem[] = [
 	{ value: "toggle", label: "toggle", description: "Hide / show the widget" },
 	{ value: "palette", label: "palette", description: "Switch colors: muted, vivid, pastel" },
@@ -46,20 +47,25 @@ const SUBCOMMANDS: CompletionItem[] = [
 	{ value: "set-token", label: "set-token", description: "Save the bearer token" },
 ];
 
-/** Tab-completion for `/limits` args: subcommands first, option values after `palette `/`mode `. */
+/** Tab-completion for `/limits` args: subcommands first, option values after `palette `/`mode `.
+ *
+ * The host replaces the whole args string with the picked `value`, so
+ * second-level values carry the full text (`palette muted`, not `muted`).
+ * Exact matches are dropped — a finished arg needs no completion.
+ */
 export function getLimitsCompletions(argumentPrefix: string): CompletionItem[] | null {
 	const [first = "", ...rest] = argumentPrefix.split(/\s+/);
 	if (rest.length > 0) {
-		const partial = rest.join(" ");
-		if (first === "palette") {
-			return PALETTE_NAMES.filter((n) => n.startsWith(partial)).map((n) => ({ value: n, label: n }));
-		}
-		if (first === "mode") {
-			return (["used", "remaining"] as const).filter((n) => n.startsWith(partial)).map((n) => ({ value: n, label: n }));
-		}
+		const second = (cmd: string, options: readonly string[]): CompletionItem[] =>
+			options
+				.filter((n) => n.startsWith(rest.join(" ")))
+				.map((n) => ({ value: `${cmd} ${n}`, label: n }))
+				.filter((item) => item.value !== argumentPrefix);
+		if (first === "palette") return second("palette", PALETTE_NAMES);
+		if (first === "mode") return second("mode", MODES);
 		return null; // free-text args (set-url, set-token): nothing to suggest
 	}
-	return SUBCOMMANDS.filter((s) => s.value.startsWith(first));
+	return SUBCOMMANDS.filter((s) => s.value.startsWith(first) && s.value !== argumentPrefix);
 }
 
 function normalizeMode(v: string | undefined): BarMode {
