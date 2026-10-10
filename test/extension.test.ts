@@ -186,8 +186,26 @@ test("/limits set-url + set-token persist to a file and render, /limits config m
 			await h.commands.limits("config", h.ctx);
 			const msg = h.notes.at(-1)!.msg;
 			assert.match(msg, /config file/);
-			assert.match(msg, /lb\.example\.com \(file\)/);
+			assert.match(msg, /https:\/\/lb.example.com\/api\/usage \(file\)/);
 			assert.doesNotMatch(msg, /tok-abc/);
+			await h.fire("session_shutdown", {});
+		} finally { f.restore(); }
+	});
+});
+
+test("/limits set-url accepts a bare host and stores the full /v1/usage URL", async () => {
+	const dir = await mkdtemp(join(tmpdir(), "codexlb-bare-"));
+	const cfg = join(dir, "config.json");
+	await withEnv({ CODEXLB_URL: undefined, CODEXLB_USAGE_URL: undefined, CODEXLB_TOKEN: "t", CODEXLB_BEARER_TOKEN: undefined, CODEXLB_CONFIG: cfg }, async () => {
+		const f = mockFetch(payload);
+		try {
+			const h = fakeHost();
+			await h.fire("session_start", {});
+			await h.commands.limits("set-url codexlb.viperrr.ru", h.ctx);
+			assert.equal(h.notes.at(-1)!.level, "info");
+			assert.match(h.notes.at(-1)!.msg, /https:\/\/codexlb\.viperrr\.ru\/v1\/usage/);
+			const saved = JSON.parse(await readFile(cfg, "utf8"));
+			assert.equal(saved.endpointUrl, "https://codexlb.viperrr.ru/v1/usage");
 			await h.fire("session_shutdown", {});
 		} finally { f.restore(); }
 	});

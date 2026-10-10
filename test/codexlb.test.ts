@@ -4,7 +4,9 @@ import {
 	endpointHost,
 	extractLimits,
 	fetchCodexLbUsage,
+	isConfigurableUrl,
 	limitToWindow,
+	normalizeEndpointUrl,
 	normalizeLimit,
 	parseCodexLbResponse,
 	parseWindowSeconds,
@@ -119,6 +121,19 @@ function stubFetch(handler: (url: string, init: any) => unknown) {
 	return (async (url: string, init: any) => handler(url, init)) as any;
 }
 
+test("normalizeEndpointUrl: bare hosts gain https:// + /v1/usage, full URLs kept", () => {
+	assert.equal(normalizeEndpointUrl("codexlb.viperrr.ru"), "https://codexlb.viperrr.ru/v1/usage");
+	assert.equal(normalizeEndpointUrl("https://codexlb.viperrr.ru"), "https://codexlb.viperrr.ru/v1/usage");
+	assert.equal(normalizeEndpointUrl("http://127.0.0.1:2455/"), "http://127.0.0.1:2455/v1/usage");
+	assert.equal(normalizeEndpointUrl("https://h/x/v1/usage"), "https://h/x/v1/usage");
+	assert.equal(normalizeEndpointUrl("https://h/v1/usage/"), "https://h/v1/usage");
+	assert.equal(normalizeEndpointUrl(""), "");
+	assert.equal(isConfigurableUrl(normalizeEndpointUrl("codexlb.viperrr.ru")), true);
+	assert.equal(isConfigurableUrl(normalizeEndpointUrl("http://localhost:2455")), true);
+	assert.equal(isConfigurableUrl(normalizeEndpointUrl("notaurl")), false);
+	assert.equal(isConfigurableUrl(normalizeEndpointUrl("ftp://h/x")), false);
+});
+
 test("fetch: sends Bearer token + Accept, maps 5h/7d", async () => {
 	let seen: any = null;
 	const fetchFn = stubFetch((url: string, init: any) => {
@@ -135,20 +150,20 @@ test("fetch: sends Bearer token + Accept, maps 5h/7d", async () => {
 
 test("fetch: auth failures, http errors, bad json, bad shape, network errors", async () => {
 	const ok = (json: unknown, status = 200) => stubFetch(async () => ({ status, ok: status >= 200 && status < 300, json: async () => json }));
-	assert.match((await fetchCodexLbUsage("https://x/y", "t", now, { fetchFn: ok({}, 401) })).error!, /rejected.*401/);
-	assert.equal((await fetchCodexLbUsage("https://x/y", "t", now, { fetchFn: ok({}, 401) })).authFailed, true);
-	assert.match((await fetchCodexLbUsage("https://x/y", "t", now, { fetchFn: ok({}, 500) })).error!, /HTTP 500/);
-	assert.match((await fetchCodexLbUsage("https://x/y", "t", now, { fetchFn: stubFetch(async () => ({ status: 200, ok: true, json: async () => { throw new Error("boom"); } })) })).error!, /invalid JSON/);
-	assert.match((await fetchCodexLbUsage("https://x/y", "t", now, { fetchFn: ok({ nope: 1 }) })).error!, /unexpected JSON/);
-	assert.match((await fetchCodexLbUsage("https://x/y", "t", now, { fetchFn: ok({ limits: [] }) })).error!, /no limits/);
-	assert.match((await fetchCodexLbUsage("https://x/y", "t", now, { fetchFn: stubFetch(async () => { throw new Error("down"); }) })).error!, /request failed: down/);
+	assert.match((await fetchCodexLbUsage("https://lb.example.com/y", "t", now, { fetchFn: ok({}, 401) })).error!, /rejected.*401/);
+	assert.equal((await fetchCodexLbUsage("https://lb.example.com/y", "t", now, { fetchFn: ok({}, 401) })).authFailed, true);
+	assert.match((await fetchCodexLbUsage("https://lb.example.com/y", "t", now, { fetchFn: ok({}, 500) })).error!, /HTTP 500/);
+	assert.match((await fetchCodexLbUsage("https://lb.example.com/y", "t", now, { fetchFn: stubFetch(async () => ({ status: 200, ok: true, json: async () => { throw new Error("boom"); } })) })).error!, /invalid JSON/);
+	assert.match((await fetchCodexLbUsage("https://lb.example.com/y", "t", now, { fetchFn: ok({ nope: 1 }) })).error!, /unexpected JSON/);
+	assert.match((await fetchCodexLbUsage("https://lb.example.com/y", "t", now, { fetchFn: ok({ limits: [] }) })).error!, /no limits/);
+	assert.match((await fetchCodexLbUsage("https://lb.example.com/y", "t", now, { fetchFn: stubFetch(async () => { throw new Error("down"); }) })).error!, /request failed: down/);
 });
 
 test("fetch: missing config and non-http(s) urls fail fast without network", async () => {
 	let called = false;
 	const fetchFn = stubFetch(async () => { called = true; return { status: 200, ok: true, json: async () => ({}) }; });
 	assert.match((await fetchCodexLbUsage("", "t", now, { fetchFn })).error!, /not configured/);
-	assert.match((await fetchCodexLbUsage("https://x/y", "", now, { fetchFn })).error!, /token/);
+	assert.match((await fetchCodexLbUsage("https://lb.example.com/y", "", now, { fetchFn })).error!, /token/);
 	assert.match((await fetchCodexLbUsage("notaurl", "t", now, { fetchFn })).error!, /http\(s\)/);
 	assert.equal(called, false);
 });
@@ -163,4 +178,16 @@ test("env config: aliases, poll clamp, host never leaks credentials", async () =
 	assert.equal(pollIntervalMs({ CODEXLB_POLL_MS: "junk" }), 300_000);
 	assert.equal(endpointHost("https://lb.example.com:8443/api/usage"), "lb.example.com:8443");
 	assert.equal(endpointHost("notaurl"), "(invalid url)");
+});
+
+test("fetch: bare host is normalized to https:// + /v1/usage before the request", async () => {
+	let seenUrl = "";
+	const fetchFn = (async (url: string, init: any) => {
+		seenUrl = url;
+		return { status: 200, ok: true, json: async () => ({ limits: [{ limit_window: "5h", max_value: 100, current_value: 25 }] }) };
+	}) as any;
+	const r = await fetchCodexLbUsage("codexlb.viperrr.ru", "t", now, { fetchFn });
+	assert.equal(r.error, undefined);
+	assert.equal(seenUrl, "https://codexlb.viperrr.ru/v1/usage");
+	assert.equal(r.subscription?.windows[0].label, "5h");
 });

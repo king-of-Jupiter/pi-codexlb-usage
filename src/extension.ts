@@ -9,7 +9,7 @@
 import { renderLine } from "./render.ts";
 import { MUTED, PASTEL, VIVID, type Palette } from "./smart-color.ts";
 import { maskToken, resolveConfig, saveFileConfig } from "./config.ts";
-import { endpointHost, fetchCodexLbUsage, isHttpUrl, pollIntervalMs } from "./sources/codexlb.ts";
+import { endpointHost, fetchCodexLbUsage, isConfigurableUrl, normalizeEndpointUrl, pollIntervalMs } from "./sources/codexlb.ts";
 import { parseHeaders } from "./sources/headers.ts";
 import { SubscriptionStore } from "./store.ts";
 
@@ -141,14 +141,14 @@ export default function codexlbUsage(pi: HostAPI): void {
 				return c.ui.notify("limits: unknown palette — use muted, vivid or pastel", "warning");
 			}
 			if (cmd === "set-url") {
-				const url = (arg ?? "").trim();
-				if (!isHttpUrl(url)) return c.ui.notify("limits: give an absolute http(s) URL, e.g. /limits set-url https://example.com/api/usage", "warning");
-				await saveFileConfig({ endpointUrl: url });
+				const normalized = normalizeEndpointUrl(arg ?? "");
+				if (!isConfigurableUrl(normalized)) return c.ui.notify("limits: give the balancer host or full usage URL, e.g. /limits set-url codexlb.example.com or /limits set-url https://example.com/v1/usage", "warning");
+				await saveFileConfig({ endpointUrl: normalized });
 				hintShown = true;
 				await poll();
 				const subs = store.all();
 				return c.ui.notify(
-					subs.length ? `CodexLB: endpoint saved (${endpointHost(url)}), ${subs.length} subscription(s) polled` : `CodexLB: endpoint saved (${endpointHost(url)}) but poll failed: ${lastError}`,
+					subs.length ? `CodexLB: endpoint saved (${normalized}), ${subs.length} subscription(s) polled` : `CodexLB: endpoint saved (${normalized}) but poll failed: ${lastError}`,
 					subs.length ? "info" : "warning",
 				);
 			}
@@ -168,7 +168,7 @@ export default function codexlbUsage(pi: HostAPI): void {
 				return c.ui.notify(
 					[
 						`config file: ${cfg.path}`,
-						`endpoint: ${cfg.url ? `${endpointHost(cfg.url)} (${cfg.urlFrom})` : "(missing)"}`,
+						`endpoint: ${cfg.url ? `${normalizeEndpointUrl(cfg.url)} (${cfg.urlFrom})` : "(missing)"}`,
 						`token: ${cfg.token ? `${maskToken(cfg.token)} (${cfg.tokenFrom})` : "(missing)"}`,
 						`label: ${cfg.label} (${cfg.labelFrom})`,
 						...(cfg.fileError ? [`file error: ${cfg.fileError}`] : []),

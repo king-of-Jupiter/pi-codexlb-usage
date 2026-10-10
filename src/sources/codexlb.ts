@@ -161,10 +161,37 @@ export interface CodexLbFetchResult {
 	authFailed?: boolean;
 }
 
-export function isHttpUrl(value: string): boolean {
+/**
+ * Normalize user input into a full endpoint URL:
+ * - `codexlb.example.com` → `https://codexlb.example.com/v1/usage`
+ * - `https://host` / `http://host:1234/` → scheme kept, `/v1/usage` appended
+ * - full URLs with a path (`…/v1/usage`, custom prefixes) are kept as-is
+ *   (trailing slashes stripped). Unparseable input comes back trimmed.
+ */
+export function normalizeEndpointUrl(input: string): string {
+	let s = input.trim();
+	if (!s) return s;
+	if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(s)) s = `https://${s}`;
 	try {
-		const u = new URL(value);
-		return u.protocol === "http:" || u.protocol === "https:";
+		const u = new URL(s);
+		const path = u.pathname.replace(/\/+$/, "");
+		u.pathname = path === "" ? "/v1/usage" : path;
+		return u.toString();
+	} catch {
+		return input.trim();
+	}
+}
+
+/** Stricter than a bare parse: rejects single-label hostnames like `notaurl`. */
+export function isConfigurableUrl(url: string): boolean {
+	try {
+		const u = new URL(url);
+		if (u.protocol !== "http:" && u.protocol !== "https:") return false;
+		const h = u.hostname;
+		if (!h) return false;
+		if (h === "localhost") return true;
+		if (/^\d+\.\d+\.\d+\.\d+$/.test(h) || h.includes(":")) return true; // IPv4 / IPv6
+		return h.includes(".");
 	} catch {
 		return false;
 	}
@@ -176,11 +203,11 @@ export async function fetchCodexLbUsage(
 	now: number,
 	opts: FetchOptions = {},
 ): Promise<CodexLbFetchResult> {
-	const url = endpointUrl.trim();
+	const url = normalizeEndpointUrl(endpointUrl);
 	const token = bearerToken.trim();
 	const label = (opts.label ?? "").trim() || "CodexLB";
 	if (!url) return { error: "CodexLB URL is not configured. Set CODEXLB_URL and CODEXLB_TOKEN." };
-	if (!isHttpUrl(url)) return { error: "CodexLB URL must be an absolute http(s) URL." };
+	if (!isConfigurableUrl(url)) return { error: "CodexLB URL must be an absolute http(s) URL (a bare host like codexlb.example.com is fine)." };
 	if (!token) return { error: "CodexLB token is not configured. Set CODEXLB_TOKEN." };
 
 	const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchFn);

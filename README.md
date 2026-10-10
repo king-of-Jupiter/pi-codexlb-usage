@@ -50,10 +50,15 @@ The easiest way is via chat commands (stored in
 `~/.config/pi-codexlb-usage/config.json` with mode `0600`; the token is never echoed):
 
 ```
-/limits set-url https://example.com/api/usage
+/limits set-url https://codexlb.example.com/v1/usage
 /limits set-token <bearer-token>
 /limits config    # show file, source of each field, masked token
 ```
+
+A bare host works too — `/limits set-url codexlb.example.com`
+saves `https://codexlb.example.com/v1/usage`. Full URLs with a custom
+path are kept as-is. The token must be a codex-lb **API key**
+(dashboard → API keys), not the dashboard password.
 
 Environment variables also work and win per-field over the file
 (handy for one-off runs and CI):
@@ -112,7 +117,7 @@ The command is `/limits` (as in the original; no clash with built-in `/usage`).
 | `/limits` | Poll now and print a plain-text breakdown with the data source |
 | `/limits status` | Endpoint (host only), label, poll age, error — no secrets |
 | `/limits config` | Config file, source of each field, masked token |
-| `/limits set-url <url>` | Save the endpoint to the file and poll |
+| `/limits set-url <url>` | Save the endpoint to the file and poll (bare host gains `https://` + `/v1/usage`) |
 | `/limits set-token <token>` | Save the token to the file (0600) and poll |
 | `/limits toggle` | Hide / show the widget |
 | `/limits palette muted\|vivid\|pastel` | Switch colors |

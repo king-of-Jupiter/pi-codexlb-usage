@@ -50,10 +50,15 @@ pi install git:github.com/king-of-Jupiter/pi-codexlb-usage
 `~/.config/pi-codexlb-usage/config.json` с правами `0600`, токен никуда не светится):
 
 ```
-/limits set-url https://example.com/api/usage
+/limits set-url https://codexlb.example.com/v1/usage
 /limits set-token <bearer-token>
 /limits config    # показать файл, источник каждого поля, токен маскирован
 ```
+
+Голый хост тоже можно — `/limits set-url codexlb.example.com`
+сохранит `https://codexlb.example.com/v1/usage`. Полные URL с собственным
+путём используются как есть. Токеном должен быть **API-ключ** codex-lb
+(дашборд → API keys), а не пароль от дашборда.
 
 Переменные окружения тоже работают и побеждают файл попольно
 (удобно для разовых запусков и CI):
@@ -110,7 +115,7 @@ export CODEXLB_TOKEN="<bearer-token>"
 | `/limits` | Опросить сейчас и показать текстовую разбивку с источником |
 | `/limits status` | Эндпоинт (только хост), лейбл, давность опроса, ошибка — без секретов |
 | `/limits config` | Файл настроек, откуда взято каждое поле, маскированный токен |
-| `/limits set-url <url>` | Сохранить эндпоинт в файл и опросить |
+| `/limits set-url <url>` | Сохранить эндпоинт в файл и опросить (голый хост дополняется `https://` + `/v1/usage`) |
 | `/limits set-token <token>` | Сохранить токен в файл (0600) и опросить |
 | `/limits toggle` | Скрыть / показать виджет |
 | `/limits palette muted\|vivid\|pastel` | Сменить цвета |
